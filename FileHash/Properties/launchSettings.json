@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FileHash": {
+      "commandName": "Project",
+      "commandLineArgs": "-i FileHash.ee -o 12"
+    }
+  }
+}
