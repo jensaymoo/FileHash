@@ -1,10 +1,6 @@
-﻿using FileHash.Outputs;
+﻿using Konsole;
 using System.Security.Cryptography;
 using System.Threading.Channels;
-using Konsole.Internal;
-using Konsole;
-using System;
-using System.Text;
 
 namespace FileHash
 {
