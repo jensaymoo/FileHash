@@ -2,7 +2,7 @@
   "profiles": {
     "FileHash": {
       "commandName": "Project",
-      "commandLineArgs": "-i FileHash.ee -o 12"
+      "commandLineArgs": "-i \"D:\\config.txt\" -b 4196"
     }
   }
 }

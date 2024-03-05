@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using FileHash.Commands;
 
 namespace FileHash
 {
@@ -14,7 +13,7 @@ namespace FileHash
 
             try
             {
-                builder.Register( c => new CommandLineProvider(args))
+                builder.Register( c => new Commands.CommandLine(args))
                     .As<IConfigProvider>()
                     .InstancePerLifetimeScope();
 
@@ -27,7 +26,7 @@ namespace FileHash
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.GetBaseException().Message);
+                Console.WriteLine(ex);
                 return;
             }
 

@@ -4,12 +4,12 @@ using FluentValidation;
 
 namespace FileHash.Commands
 {
-    internal class CommandLineProvider : IConfigProvider
+    internal class CommandLine : IConfigProvider
     {
         private string[] arguments;
         IMapper mapper;
 
-        public CommandLineProvider(string[] args)
+        public CommandLine(string[] args)
         {
             arguments = args;
             mapper = new MapperConfiguration(cfg =>cfg.CreateMap<BaseConfigCommands, Configuration>())
