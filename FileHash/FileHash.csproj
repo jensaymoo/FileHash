@@ -16,8 +16,4 @@
     <PackageReference Include="Goblinfactory.Konsole" Version="6.2.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Outputs\" />
-  </ItemGroup>
-
 </Project>

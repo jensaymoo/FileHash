@@ -1,4 +1,6 @@
 ﻿using Autofac;
+using FileHash.Inputs;
+using FileHash.Outputs;
 
 namespace FileHash
 {
@@ -15,6 +17,15 @@ namespace FileHash
             {
                 builder.Register( c => new Commands.CommandLine(args))
                     .As<IConfigProvider>()
+                    .InstancePerLifetimeScope();
+
+                builder.RegisterType<InputFile>()
+                    .As<IInput>()
+                    .InstancePerLifetimeScope();
+
+
+                builder.RegisterType<ConsoleOutput>()
+                    .As<IOutput>()
                     .InstancePerLifetimeScope();
 
                 builder.RegisterType<Program>()

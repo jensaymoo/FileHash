@@ -1,4 +1,5 @@
-﻿using Konsole;
+﻿using FileHash.Inputs;
+using FileHash.Outputs;
 using System.Security.Cryptography;
 using System.Threading.Channels;
 
@@ -6,53 +7,40 @@ namespace FileHash
 {
     internal class Program : IProgram
     {
-        IConfigProvider commandsProvider;
+        IConfigProvider configProvider;
+        IInput inputProvider;
+        IOutput outputProvider;
 
         Configuration configuration;
-        public Program(IConfigProvider provider) 
+        public Program(IConfigProvider configProvider, IInput inputProvider, IOutput outputProvider) 
         {
-            commandsProvider = provider;
-            configuration = commandsProvider.GetConfiguration(new BaseCommandLineValidator());
-        }
+            this.configProvider = configProvider;
+            this.inputProvider = inputProvider;
+            this.outputProvider = outputProvider;
 
+            configuration = this.configProvider.GetConfiguration(new BaseCommandLineValidator());
+        }
 
         public async Task Run()
         {
-            var con = new Window();
-            var consoles = con.SplitRows(
-                    new Split(0),
-                    new Split(1)
-            );
-
-            var content = new Window(consoles[0]).Concurrent();
-            var progress = new ProgressBar(consoles[1], Convert.ToInt32(new FileInfo(configuration.FileName).Length / configuration.BatchSize));
-
             var abortTokenSource = new CancellationTokenSource();
 
-            var channel = ReadFile(configuration.FileName, content, abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity ?? 50);
-            PrintHashes(channel, content, progress, abortTokenSource, configuration.TaskLimit ?? Environment.ProcessorCount);
-
+            var channel = ReadInput(configuration.FileName, abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity ?? 50);
+            PublisHash(channel, abortTokenSource, configuration.TaskLimit ?? Environment.ProcessorCount);
 
             PeriodicTimer timer = new(TimeSpan.FromMilliseconds(50));
             while (await timer.WaitForNextTickAsync())
             {
-                var key = await WaitConsoleKey();
+                var key = await Task.Run(() => Console.ReadKey(true)); ;
                 if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Q)
                 {
                     await abortTokenSource.CancelAsync();
                     break;
                 }
             }
-
-        }
-        private static async Task<ConsoleKeyInfo> WaitConsoleKey()
-        {
-            ConsoleKeyInfo key = default;
-            await Task.Run(() => key = Console.ReadKey(true));
-            return key;
         }
 
-        private Channel<byte[]> ReadFile(string fileName, IConsole console, CancellationTokenSource cts, int batchSize = 4196, int capacityChannel = 50)
+        private Channel<byte[]> ReadInput(string fileName, CancellationTokenSource cts, int batchSize = 4196, int capacityChannel = 50)
         {
             if (capacityChannel <= 0)
                 throw new ArgumentOutOfRangeException(nameof(capacityChannel));
@@ -61,31 +49,22 @@ namespace FileHash
                 throw new ArgumentOutOfRangeException(nameof(batchSize));
 
             CancellationToken ct = cts.Token;
-
             Channel<byte[]> channel = Channel.CreateBounded<byte[]>(capacityChannel);
+
             var readTask = Task.Run(async () =>
             {
                 try
                 {
-
-                    using (FileStream sourceStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: batchSize, useAsync: true))
+                    byte[] buffer = new byte[batchSize];
+                    while ((buffer = await inputProvider.GetNextBatchBytesAsync()).Length != 0)
                     {
-                        byte[] buffer = new byte[batchSize];
-                        int numRead;
-
-                        while ((numRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
-                        {
-                            var zippedBuffer = new byte[numRead];
-                            Array.Copy(buffer, zippedBuffer, numRead);
-
-                            await channel.Writer.WriteAsync(zippedBuffer, ct);
-                        }
+                        await channel.Writer.WriteAsync(buffer, ct);
                     }
                 }
                 catch (OperationCanceledException) { }
                 catch (Exception ex)
                 {
-                    console.WriteLine(ConsoleColor.Red, ex.ToString());
+                    Console.WriteLine(ex.ToString());
                     cts.Cancel();
                 }
                 finally
@@ -97,134 +76,37 @@ namespace FileHash
             return channel;
 
         }
-        private void PrintHashes(Channel<byte[]> channel, IConsole console, IProgressBar progressBar, CancellationTokenSource cts, int taskLimit = 0)
+        private void PublisHash(Channel<byte[]> channel, CancellationTokenSource cts, int taskLimit = 0)
         {
             if (taskLimit <= 0)
                 throw new ArgumentOutOfRangeException(nameof(taskLimit));
 
             CancellationToken ct = cts.Token;
-
-            object statusLocker = new object();
-            int status = 0;
-            //таска для обновления прогрессбара
-            async Task UpdateProgress() => await Task.Run(() =>
+            for (int i = 0; i < taskLimit; i++)
             {
-                lock (statusLocker)
+                var publishTask = Task.Run(async () =>
                 {
-                    status++;
-                    progressBar.Refresh(status, "Calculating hashes...");
-                }
-            });
-
-            //делаем массив длинной taskLimit чтобы ограничить колво одновременных таск
-            var hashTasks = Enumerable.Range(1, taskLimit)
-            .Select(x => Task.Run(async () =>
-            {
-                try
-                {
-                    while (await channel.Reader.WaitToReadAsync(ct))
+                    try
                     {
-                        ct.ThrowIfCancellationRequested();
-                        while (channel.Reader.TryRead(out var bytes))
+                        while (await channel.Reader.WaitToReadAsync(ct))
                         {
-                            using (SHA256 sha256 = SHA256.Create())
+                            while (channel.Reader.TryRead(out var bytes))
                             {
-                                console.WriteLine(Convert.ToHexString(sha256.ComputeHash(bytes)));
-                                await UpdateProgress();
-                            };
+                                using (SHA256 sha256 = SHA256.Create())
+                                {
+                                    await outputProvider.Publish(sha256.ComputeHash(bytes));
+                                };
+                            }
                         }
                     }
-                }
-                catch (OperationCanceledException) { }
-                catch
-                {
-                    cts.Cancel();
-                    throw;
-                }
-            }))
-            .ToArray();
-
-            ////Task waitForHash = Task.WhenAll(hashTasks);
-            //try { await waitForHash; }
-            //catch
-            //{
-            //    if (waitForHash.IsFaulted && waitForHash.Exception is not null)
-            //    {
-            //        foreach (var e in waitForHash.Exception.Flatten().InnerExceptions)
-            //            console.WriteLine(ConsoleColor.Red, e.ToString());
-
-            //        throw waitForHash.Exception.Flatten();
-            //    }
-            //    else throw;
-            //}
-        }
-
-        public async Task ProcessMessages(string filename, IConsole console, IProgressBar progressBar, CancellationTokenSource cts, int batchSize, int capacityTask = 50, int taskLimit = 0)
-        {
-            //if (taskLimit <= 0)
-            //    taskLimit = Environment.ProcessorCount;
-
-
-            //var channel = await ReadFile(filename, console, cts);
-            //await PrintHashesAsync(channel, console, progressBar, cts, taskLimit);
-            //CancellationToken ct = cts.Token;
-
-            //object statusLocker = new object();
-            //int status = 0;
-            ////таска для обновления прогрессбара
-            //async Task UpdateProgress() => await Task.Run(() =>
-            //{
-            //    lock (statusLocker)
-            //    {
-            //        status++;
-            //        progressBar.Refresh(status, filename);
-            //    }
-            //});
-
-            ////делаем массив длинной taskLimit 
-            //var hashTasks = Enumerable.Range(1, taskLimit)
-            //.Select(x => Task.Run(async () =>
-            //{
-            //    try
-            //    {
-            //        while (await channel.Reader.WaitToReadAsync(ct))
-            //        {
-            //            ct.ThrowIfCancellationRequested();
-            //            while (channel.Reader.TryRead(out var bytes))
-            //            {
-            //                using (SHA256 mySHA256 = SHA256.Create())
-            //                {
-            //                    byte[] hashValue = mySHA256.ComputeHash(bytes);
-
-            //                    console.WriteLine(Convert.ToHexString(hashValue));
-            //                    await UpdateProgress();
-            //                }
-            //            }
-            //        }
-            //    }
-            //    catch (OperationCanceledException) { }
-            //    catch
-            //    {
-            //        cts.Cancel();
-            //        throw;
-            //    }
-            //}))
-            //.ToArray();
-
-            //Task waitForHash = Task.WhenAll(hashTasks);
-            //try { await waitForHash; }
-            //catch
-            //{
-            //    if (waitForHash.IsFaulted && waitForHash.Exception is not null)
-            //    {
-            //        foreach (var e in waitForHash.Exception.Flatten().InnerExceptions)
-            //            console.WriteLine(e.ToString());
-
-            //        throw waitForHash.Exception.Flatten();
-            //    }
-            //    else throw;
-            //}
-
+                    catch (OperationCanceledException) { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                        cts.Cancel();
+                    }
+                });
+            }
         }
     }
 }
