@@ -1,8 +1,7 @@
 {
   "profiles": {
     "FileHash": {
-      "commandName": "Project",
-      "commandLineArgs": "-i \"D:\\config.txt\" -b 4196"
+      "commandName": "Project"
     }
   }
 }

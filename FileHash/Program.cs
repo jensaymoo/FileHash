@@ -5,33 +5,41 @@ using System.Threading.Channels;
 
 namespace FileHash
 {
-    internal class Program : IProgram
+    internal class Program(IConfigProvider configProvider, IInputProvider inputProvider, IOutputProvider outputProvider) : IProgram
     {
-        IConfigProvider configProvider;
-        IInput inputProvider;
-        IOutput outputProvider;
+        const int defautBatchSize = 4096;
+        const int defaultChannelCapacity = 50;
 
-        Configuration configuration;
-        public Program(IConfigProvider configProvider, IInput inputProvider, IOutput outputProvider) 
-        {
-            this.configProvider = configProvider;
-            this.inputProvider = inputProvider;
-            this.outputProvider = outputProvider;
-
-            configuration = this.configProvider.GetConfiguration(new BaseCommandLineValidator());
-        }
+        Configuration? configuration;
 
         public async Task Run()
         {
+            try
+            {
+                configuration = configProvider.GetConfiguration(new ConfigurationValidator());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
+
+
             var abortTokenSource = new CancellationTokenSource();
 
-            var channel = ReadInput(configuration.FileName, abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity ?? 50);
-            PublisHash(channel, abortTokenSource, configuration.TaskLimit ?? Environment.ProcessorCount);
-
-            PeriodicTimer timer = new(TimeSpan.FromMilliseconds(50));
-            while (await timer.WaitForNextTickAsync())
+            using (var stream = await inputProvider.GetStream())
             {
-                var key = await Task.Run(() => Console.ReadKey(true)); ;
+                var maxBathces = (int)Math.Ceiling((double)stream.Length / (configuration.BatchSize ?? defautBatchSize));
+                await outputProvider.SetMaxBatchCount(maxBathces);
+            }
+
+            var channel = ReadInput(abortTokenSource, configuration.BatchSize ?? defautBatchSize, configuration.ChannelCapacity ?? defaultChannelCapacity);
+            PublishHash(channel, abortTokenSource, configuration.TaskLimit ?? Environment.ProcessorCount);
+
+            
+            while (true) 
+            {
+                var key = Console.ReadKey(); 
                 if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Q)
                 {
                     await abortTokenSource.CancelAsync();
@@ -40,7 +48,7 @@ namespace FileHash
             }
         }
 
-        private Channel<byte[]> ReadInput(string fileName, CancellationTokenSource cts, int batchSize = 4196, int capacityChannel = 50)
+        private Channel<byte[]> ReadInput(CancellationTokenSource cts, int batchSize, int capacityChannel)
         {
             if (capacityChannel <= 0)
                 throw new ArgumentOutOfRangeException(nameof(capacityChannel));
@@ -55,10 +63,13 @@ namespace FileHash
             {
                 try
                 {
-                    byte[] buffer = new byte[batchSize];
-                    while ((buffer = await inputProvider.GetNextBatchBytesAsync()).Length != 0)
+                    using (var stream = await inputProvider.GetStream())
                     {
-                        await channel.Writer.WriteAsync(buffer, ct);
+                        byte[] buffer = new byte[batchSize];
+                        while ((buffer = await stream.ReadBatchAsync(batchSize)).Length != 0)
+                        {
+                            await channel.Writer.WriteAsync(buffer, ct);
+                        }
                     }
                 }
                 catch (OperationCanceledException) { }
@@ -74,9 +85,8 @@ namespace FileHash
             });
 
             return channel;
-
         }
-        private void PublisHash(Channel<byte[]> channel, CancellationTokenSource cts, int taskLimit = 0)
+        private void PublishHash(Channel<byte[]> channel, CancellationTokenSource cts, int taskLimit = 0)
         {
             if (taskLimit <= 0)
                 throw new ArgumentOutOfRangeException(nameof(taskLimit));
@@ -94,8 +104,8 @@ namespace FileHash
                             {
                                 using (SHA256 sha256 = SHA256.Create())
                                 {
-                                    await outputProvider.Publish(sha256.ComputeHash(bytes));
-                                };
+                                    await outputProvider.PublishHash(sha256.ComputeHash(bytes));
+                                }
                             }
                         }
                     }
