@@ -34,7 +34,7 @@ namespace FileHash
                         {
                             return false;
                         }
-                    }).WithMessage("Заданный файл неудается прочитать.");
+                    }).WithMessage("Заданный файл не удается прочитать.");
             });
 
 
