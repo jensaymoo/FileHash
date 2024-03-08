@@ -2,18 +2,18 @@
 {
     internal class FileStreamInput(IConfigProvider provider) : IInputProvider
     {
-        Configuration? configuration;
+        ConfigurationFileStream? configuration;
 
         public async Task<Stream> GetStream()
         {
             try
             {
-                configuration = provider.GetConfiguration(new ConfigurationValidator());
+                configuration = provider.GetConfiguration(new ConfigurationFileStreamValidator());
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return null;
+                throw new Exception("Configuration validation failed", ex);
             }
 
             return new FileStream(configuration.FileName, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 16384, useAsync: true);

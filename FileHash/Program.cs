@@ -10,20 +10,19 @@ namespace FileHash
         const int defautBatchSize = 4096;
         const int defaultChannelCapacity = 50;
 
-        Configuration? configuration;
+        ConfigurationFileStream? configuration;
 
         public async Task Run()
         {
             try
             {
-                configuration = configProvider.GetConfiguration(new ConfigurationValidator());
+                configuration = configProvider.GetConfiguration(new ConfigurationFileStreamValidator());
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return;
             }
-
 
             var abortTokenSource = new CancellationTokenSource();
 
@@ -36,10 +35,10 @@ namespace FileHash
             var channel = ReadInput(abortTokenSource, configuration.BatchSize ?? defautBatchSize, configuration.ChannelCapacity ?? defaultChannelCapacity);
             PublishHash(channel, abortTokenSource, configuration.TaskLimit ?? Environment.ProcessorCount);
 
-            
-            while (true) 
+
+            while (true)
             {
-                var key = Console.ReadKey(); 
+                var key = Console.ReadKey();
                 if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Q)
                 {
                     await abortTokenSource.CancelAsync();
@@ -86,7 +85,7 @@ namespace FileHash
 
             return channel;
         }
-        private void PublishHash(Channel<byte[]> channel, CancellationTokenSource cts, int taskLimit = 0)
+        private void PublishHash(Channel<byte[]> channel, CancellationTokenSource cts, int taskLimit)
         {
             if (taskLimit <= 0)
                 throw new ArgumentOutOfRangeException(nameof(taskLimit));

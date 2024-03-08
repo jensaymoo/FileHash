@@ -12,7 +12,7 @@ namespace FileHash.Commands
         public CommandLineProvider(string[] args)
         {
             arguments = args;
-            mapper = new MapperConfiguration(cfg => cfg.CreateMap<CommandLine, Configuration>())
+            mapper = new MapperConfiguration(cfg => cfg.CreateMap<CommandLine, ConfigurationFileStream>())
                 .CreateMapper();
         }
 
