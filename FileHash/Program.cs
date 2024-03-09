@@ -27,10 +27,22 @@ namespace FileHash
             }
 
             var abortTokenSource = new CancellationTokenSource();
-
-            var channel = ReadInput(abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity);
-            PublishHash(channel, abortTokenSource, configuration.TaskLimit);
-
+            var mainTask = Task.Run(async () =>
+            {
+                try
+                {
+                    using (var stream = await inputProvider.GetStream())
+                    {
+                        var channel = ReadInput(stream, abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity);
+                        await PublishHash(channel, abortTokenSource, configuration.TaskLimit);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
+            });
 
             while (true)
             {
@@ -43,7 +55,7 @@ namespace FileHash
             }
         }
 
-        private Channel<byte[]> ReadInput(CancellationTokenSource cts, int batchSize, int capacityChannel)
+        private Channel<byte[]> ReadInput(Stream stream, CancellationTokenSource cts, int batchSize, int capacityChannel)
         {
             if (capacityChannel <= 0)
                 throw new ArgumentOutOfRangeException(nameof(capacityChannel));
@@ -58,13 +70,10 @@ namespace FileHash
             {
                 try
                 {
-                    using (var stream = await inputProvider.GetStream())
+                    byte[] buffer = new byte[batchSize];
+                    while ((buffer = await stream.ReadBatchAsync(batchSize)).Length != 0)
                     {
-                        byte[] buffer = new byte[batchSize];
-                        while ((buffer = await stream.ReadBatchAsync(batchSize)).Length != 0)
-                        {
-                            await channel.Writer.WriteAsync(buffer, ct);
-                        }
+                        await channel.Writer.WriteAsync(buffer, ct);
                     }
                 }
                 catch (OperationCanceledException) { }
@@ -81,15 +90,17 @@ namespace FileHash
 
             return channel;
         }
-        private void PublishHash(Channel<byte[]> channel, CancellationTokenSource cts, int taskLimit)
+        private async Task PublishHash(Channel<byte[]> channel, CancellationTokenSource cts, int taskLimit)
         {
             if (taskLimit <= 0)
                 throw new ArgumentOutOfRangeException(nameof(taskLimit));
 
             CancellationToken ct = cts.Token;
+
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < taskLimit; i++)
             {
-                var publishTask = Task.Run(async () =>
+                tasks.Add(Task.Run(async () =>
                 {
                     try
                     {
@@ -110,8 +121,10 @@ namespace FileHash
                         Console.WriteLine(ex.ToString());
                         cts.Cancel();
                     }
-                });
+                }));
             }
+
+            await Task.WhenAll(tasks);        
         }
     }
 }
