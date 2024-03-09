@@ -7,39 +7,29 @@ namespace FileHash
 {
     internal class Program(IConfigProvider configProvider, IInputProvider inputProvider, IOutputProvider outputProvider) : IProgram
     {
-        const int defautBatchSize = 4096;
-        const int defaultChannelCapacity = 50;
-
         ConfigurationFileStream? configuration;
 
         public async Task Run()
         {
-            Stream stream = null;
             try
             {
-                configuration = configProvider.GetConfiguration(new ConfigurationFileStreamValidator());
-                stream = await inputProvider.GetStream();
+                using (var stream = await inputProvider.GetStream())
+                { 
+                    configuration = configProvider.GetConfiguration(new ConfigurationFileStreamValidator());
+                    var maxBatches = (int)Math.Ceiling((double)stream.Length / configuration.BatchSize);
+                    await outputProvider.SetMaxBatchCount(maxBatches);
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return;
             }
-            finally
-            {
-                if (stream is IDisposable)
-                {
-                    stream.Dispose();
-                }
-            }
-
-            var maxBathces = (int)Math.Ceiling((double)stream.Length / (configuration.BatchSize ?? defautBatchSize));
-            await outputProvider.SetMaxBatchCount(maxBathces);
 
             var abortTokenSource = new CancellationTokenSource();
 
-            var channel = ReadInput(abortTokenSource, configuration.BatchSize ?? defautBatchSize, configuration.ChannelCapacity ?? defaultChannelCapacity);
-            PublishHash(channel, abortTokenSource, configuration.TaskLimit ?? Environment.ProcessorCount);
+            var channel = ReadInput(abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity);
+            PublishHash(channel, abortTokenSource, configuration.TaskLimit);
 
 
             while (true)

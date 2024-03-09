@@ -12,8 +12,15 @@ namespace FileHash.Commands
         public CommandLineProvider(string[] args)
         {
             arguments = args;
-            mapper = new MapperConfiguration(cfg => cfg.CreateMap<CommandLine, ConfigurationFileStream>())
-                .CreateMapper();
+            mapper = new MapperConfiguration(cfg => 
+            {
+                cfg.CreateMap<CommandLine, ConfigurationFileStream>()
+                    .MapIf(x => x.FileName, y => y.FileName is not null, v => v.FileName!)
+                    .MapIf(x => x.BatchSize, y => y.BatchSize is not null, v => v.BatchSize!)
+                    .MapIf(x => x.TaskLimit, y => y.TaskLimit is not null, v => v.TaskLimit!)
+                    .MapIf(x => x.ChannelCapacity, y => y.ChannelCapacity is not null, v => v.ChannelCapacity!);
+
+            }).CreateMapper();
         }
 
         public T GetConfiguration<T>(AbstractValidator<T>? validator = null) where T : new()
@@ -26,5 +33,6 @@ namespace FileHash.Commands
 
             return value;
         }
+
     }
 }

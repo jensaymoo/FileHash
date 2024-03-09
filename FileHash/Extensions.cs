@@ -1,4 +1,7 @@
-﻿namespace FileHash
+﻿using AutoMapper;
+using System.Linq.Expressions;
+
+namespace FileHash
 {
     internal static class Extensions
     {
@@ -13,6 +16,17 @@
             Array.Copy(buffer, zippedBuffer, numRead);
 
             return await Task.FromResult(zippedBuffer);
+        }
+        public static IMappingExpression<TSource, TDestination> MapIf<TSource, TDestination>(
+            this IMappingExpression<TSource, TDestination> map, Expression<Func<TDestination, object>> selector,
+            Func<TSource, bool> mapIfCondition, Expression<Func<TSource, object>> mapping)
+        {
+            map.ForMember(selector, c =>
+            {
+                c.MapFrom(mapping);
+                c.PreCondition(mapIfCondition);
+            });
+            return map;
         }
     }
 }
