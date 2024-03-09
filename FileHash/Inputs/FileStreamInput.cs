@@ -12,7 +12,6 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
                 throw new Exception("Configuration validation failed", ex);
             }
 
