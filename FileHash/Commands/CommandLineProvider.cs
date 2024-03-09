@@ -15,8 +15,8 @@ namespace FileHash.Commands
             mapper = new MapperConfiguration(cfg => 
             {
                 cfg.CreateMap<CommandLine, ConfigurationFileStream>()
-                    .MapIf(x => x.FileName, y => y.FileName is not null, v => v.FileName!)
-                    .MapIf(x => x.BatchSize, y => y.BatchSize is not null, v => v.BatchSize!)
+                    .MapIf(x => x.FileName, y => y.Input is not null, v => v.Input!)
+                    .MapIf(x => x.BatchSize, y => y.Batch is not null, v => v.Batch!)
                     .MapIf(x => x.TaskLimit, y => y.TaskLimit is not null, v => v.TaskLimit!)
                     .MapIf(x => x.ChannelCapacity, y => y.ChannelCapacity is not null, v => v.ChannelCapacity!);
 

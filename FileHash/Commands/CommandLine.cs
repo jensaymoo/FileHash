@@ -5,10 +5,10 @@ namespace FileHash
     internal class CommandLine
     {
         [Option('i', "input", Required = true, HelpText = "Set input filename for processing.")]
-        public string? FileName { get; set; }
+        public string? Input { get; set; }
 
         [Option('b', "batch", Required = false, HelpText = "Set bytes count in one batch for processing.")]
-        public int? BatchSize { get; set; }
+        public int? Batch { get; set; }
 
         [Option('t', "task_limit", Required = false, HelpText = "Set max count task executing for processing. Default = Processors Count.")]
         public int? TaskLimit { get; set; }
