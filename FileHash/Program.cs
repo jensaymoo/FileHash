@@ -79,8 +79,8 @@ namespace FileHash
                 catch (OperationCanceledException) { }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
                     cts.Cancel();
+                    throw;
                 }
                 finally
                 {
@@ -118,8 +118,8 @@ namespace FileHash
                     catch (OperationCanceledException) { }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.ToString());
                         cts.Cancel();
+                        throw;
                     }
                 }));
             }
