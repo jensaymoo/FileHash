@@ -39,7 +39,10 @@ namespace FileHash.Outputs
 
         public async Task SetMaxBatchCount(int maxProggress)
         {
-            progressBar.Max = maxProggress;
+            lock (progressBar)
+            {
+                progressBar.Max = maxProggress;
+            }
         }
     }
 }
