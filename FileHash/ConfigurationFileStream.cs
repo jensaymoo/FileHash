@@ -22,19 +22,21 @@ namespace FileHash
             When(x => File.Exists(x.FileName), () =>
             {
                 RuleFor(opt => opt.FileName)
-                    .Must(x => {
+                    .Custom((val, context) =>
+                    {
                         try
                         {
-                            using (var file = File.OpenRead(x))
+                            using (var file = File.OpenRead(val))
                             {
-                                return file.CanRead;
+                                if (!file.CanRead)
+                                    context.AddFailure("Заданный файл не удается прочитать по неизвестной причине.");
                             }
                         }
                         catch (Exception ex)
                         {
-                            return false;
+                            context.AddFailure($"Заданный файл не удается прочитать: {ex.Message}");
                         }
-                    }).WithMessage("Заданный файл не удается прочитать.");
+                    });
             });
 
 
