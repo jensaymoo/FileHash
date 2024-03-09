@@ -11,21 +11,6 @@ namespace FileHash
 
         public async Task Run()
         {
-            try
-            {
-                using (var stream = await inputProvider.GetStream())
-                { 
-                    configuration = configProvider.GetConfiguration(new ConfigurationFileStreamValidator());
-                    var maxBatches = (int)Math.Ceiling((double)stream.Length / configuration.BatchSize);
-                    await outputProvider.SetMaxBatchCount(maxBatches);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return;
-            }
-
             var abortTokenSource = new CancellationTokenSource();
             var mainTask = Task.Run(async () =>
             {
@@ -33,6 +18,11 @@ namespace FileHash
                 {
                     using (var stream = await inputProvider.GetStream())
                     {
+                        configuration = configProvider.GetConfiguration(new ConfigurationFileStreamValidator());
+                        var maxBatches = (int)Math.Ceiling((double)stream.Length / configuration.BatchSize);
+
+                        await outputProvider.SetMaxBatchCount(maxBatches);
+
                         var channel = ReadInput(stream, abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity);
                         await PublishHash(channel, abortTokenSource, configuration.TaskLimit);
                     }
