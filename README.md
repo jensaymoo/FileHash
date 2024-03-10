@@ -13,7 +13,7 @@
 > Чтобы прервать выполнение приложения необходимо нажать CTRL + Q.
 
 ### Развертывание
-Для развертывания приложения под систему linux необходимо в каталоге проекта выполнить:
+Для развертывания self-contained приложения под систему linux необходимо в каталоге проекта выполнить:
 ```
 dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial
 ```
