@@ -1,5 +1,7 @@
 ﻿using FileHash.Inputs;
 using FileHash.Outputs;
+using FluentValidation;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Threading.Channels;
 
@@ -28,6 +30,16 @@ namespace FileHash
 
                         await abortTokenSource.CancelAsync();
                     }
+                }
+                catch (ValidationException ex)
+                {
+                    Console.WriteLine($"{Assembly.GetExecutingAssembly()?.GetName().Name} {Assembly.GetExecutingAssembly()?.GetName()?.Version.ToString()}" + Environment.NewLine);
+                    Console.WriteLine(configProvider.GetConfigurationDescription() + Environment.NewLine);
+                    
+                    Console.WriteLine(ex.Message);
+                    await abortTokenSource.CancelAsync();
+
+                    return;
                 }
                 catch (Exception ex)
                 {
