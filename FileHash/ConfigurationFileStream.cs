@@ -15,7 +15,6 @@ namespace FileHash
         public ConfigurationFileStreamValidator()
         {
             RuleFor(opt => opt.FileName)
-                .NotNull()
                 .NotEmpty()
                 .Must(x => File.Exists(x)).WithMessage("Заданный файл не найден.");
 
@@ -53,7 +52,7 @@ namespace FileHash
             RuleFor(opt => opt.ChannelCapacity)
                 .NotNull()
                 .NotEmpty()
-                .InclusiveBetween(50, 250);
+                .InclusiveBetween(64, 254);
         }
     }
 }
