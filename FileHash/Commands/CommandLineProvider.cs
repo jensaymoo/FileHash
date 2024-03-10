@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
-using CommandLine;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.CommandLine;
 
 namespace FileHash.Commands
 {

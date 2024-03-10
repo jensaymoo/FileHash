@@ -1,48 +1,36 @@
-﻿using Konsole;
+﻿using Spectre.Console;
+using System.Collections.Concurrent;
+
 namespace FileHash.Outputs
 {
     internal class ConsoleOutput : IOutputProvider
     {
-        ConcurrentWriter content;
-        ConcurrentWriter info;
-        ProgressBar progressBar;
-
-        public ConsoleOutput()
-        {
-            var console = new Window();
-            var console_rows = console.SplitRows(
-                    new Split(0),
-                    new Split(1),
-                    new Split(1)
-            );
-
-            content = new Window(console_rows[0]).Concurrent();
-            info = new Window(console_rows[1]).Concurrent();
-
-            progressBar = new ProgressBar(console_rows[2], 100);
-
-            info.WriteLine("Press CTRL + Q to abort");
-        }
+        ProgressTask progressTask;       
+        ConcurrentQueue<string> outputQueue = new ConcurrentQueue<string>();
 
         public async Task PublishHash(byte[] hash)
         {
-            await Task.Run(() =>
-            {
-                content.WriteLine(Convert.ToHexString(hash));
-                
-                lock (progressBar)
-                {
-                    progressBar.Next("Calculated hashes");
-                }
-            });
+            outputQueue.Enqueue(Convert.ToHexString(hash));
         }
 
-        public async Task SetMaxBatchCount(int maxProggress)
+        public async Task DisplayHashes(int maxCount)
         {
-            lock (progressBar)
-            {
-                progressBar.Max = maxProggress;
-            }
+            await AnsiConsole.Progress()
+                .StartAsync(async ctx =>
+                {
+                    progressTask = ctx.AddTask("Reciving hashes", maxValue: maxCount);
+
+                    while (!ctx.IsFinished)
+                    {
+                        await Task.Delay(25);
+                        while (outputQueue.TryDequeue(out var result))
+                        {
+                            progressTask.Increment(1);
+                            AnsiConsole.WriteLine(result);
+                        }
+                    }
+                    progressTask.Value = progressTask.MaxValue;
+                });
         }
     }
 }

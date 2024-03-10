@@ -3,6 +3,6 @@
     internal interface IOutputProvider
     {
         Task PublishHash(byte[] hash);
-        Task SetMaxBatchCount(int maxProggress);
+        Task DisplayHashes(int maxCount);
     }
 }

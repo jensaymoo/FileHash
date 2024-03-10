@@ -19,12 +19,12 @@ namespace FileHash
                     using (var stream = await inputProvider.GetStream())
                     {
                         configuration = configProvider.GetConfiguration(new ConfigurationFileStreamValidator());
-                        var maxBatches = (int)Math.Ceiling((double)stream.Length / configuration.BatchSize);
-
-                        await outputProvider.SetMaxBatchCount(maxBatches);
 
                         var channel = ReadInput(stream, abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity);
-                        await PublishHash(channel, abortTokenSource, configuration.TaskLimit);
+                        _ = PublishHash(channel, abortTokenSource, configuration.TaskLimit);
+
+                        var maxBatches = (int)Math.Ceiling((double)stream.Length / configuration.BatchSize);
+                        await outputProvider.DisplayHashes(maxBatches);
 
                         await abortTokenSource.CancelAsync();
                     }
@@ -37,7 +37,7 @@ namespace FileHash
                     return;
                 }
             });
-
+            
             try
             {
                 PeriodicTimer timer = new(TimeSpan.FromMilliseconds(15));
