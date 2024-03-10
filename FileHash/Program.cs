@@ -25,24 +25,41 @@ namespace FileHash
 
                         var channel = ReadInput(stream, abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity);
                         await PublishHash(channel, abortTokenSource, configuration.TaskLimit);
+
+                        await abortTokenSource.CancelAsync();
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
+                    await abortTokenSource.CancelAsync();
+
                     return;
                 }
             });
 
-            while (true)
+            try
             {
-                var key = Console.ReadKey();
-                if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Q)
+                PeriodicTimer timer = new(TimeSpan.FromMilliseconds(15));
+                while (await timer.WaitForNextTickAsync(abortTokenSource.Token))
                 {
-                    await abortTokenSource.CancelAsync();
-                    break;
+                    await Task.Run(async () =>
+                    {
+                        if (Console.KeyAvailable)
+                        {
+                            var key = Console.ReadKey();
+
+                            if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Q)
+                            {
+                                await abortTokenSource.CancelAsync();
+                                return;
+                            }
+                        }
+                    }, abortTokenSource.Token);
                 }
             }
+            catch (OperationCanceledException) { }
+
         }
 
         private Channel<byte[]> ReadInput(Stream stream, CancellationTokenSource cts, int batchSize, int capacityChannel)
@@ -108,7 +125,7 @@ namespace FileHash
                     catch (OperationCanceledException) { }
                     catch (Exception ex)
                     {
-                        cts.Cancel();
+                        await cts.CancelAsync();
                         throw;
                     }
                 }));

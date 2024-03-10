@@ -7,7 +7,7 @@ namespace FileHash
         public string FileName { get; set; }
         public int BatchSize { get; set; } = 4096;
         public int TaskLimit { get; set; } = 16;
-        public int ChannelCapacity { get; set; } = 50;
+        public int ChannelCapacity { get; set; } = 150;
     }
 
     internal class ConfigurationFileStreamValidator : AbstractValidator<ConfigurationFileStream>
@@ -48,12 +48,12 @@ namespace FileHash
             RuleFor(opt => opt.TaskLimit)
                 .NotNull()
                 .NotEmpty()
-                .InclusiveBetween(1, 16);
+                .InclusiveBetween(1, 64);
 
             RuleFor(opt => opt.ChannelCapacity)
                 .NotNull()
                 .NotEmpty()
-                .InclusiveBetween(25, 150);
+                .InclusiveBetween(50, 250);
         }
     }
 }

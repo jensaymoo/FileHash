@@ -29,7 +29,7 @@ namespace FileHash.Outputs
             await Task.Run(() =>
             {
                 content.WriteLine(Convert.ToHexString(hash));
-
+                
                 lock (progressBar)
                 {
                     progressBar.Next("Calculated hashes");
