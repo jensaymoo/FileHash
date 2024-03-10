@@ -14,7 +14,7 @@ namespace FileHash
     {
         public ConfigurationFileStreamValidator()
         {
-            RuleFor(opt => opt.FileName)
+            RuleFor(opt => opt.FileName).Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .Must(x => File.Exists(x)).WithMessage("Заданный файл не найден.");
 
@@ -39,17 +39,17 @@ namespace FileHash
             });
 
 
-            RuleFor(opt => opt.BatchSize)
+            RuleFor(opt => opt.BatchSize).Cascade(CascadeMode.Stop)
                 .NotNull()
                 .NotEmpty()
                 .InclusiveBetween(4096, 4194304);
 
-            RuleFor(opt => opt.TaskLimit)
+            RuleFor(opt => opt.TaskLimit).Cascade(CascadeMode.Stop)
                 .NotNull()
                 .NotEmpty()
                 .InclusiveBetween(1, 64);
 
-            RuleFor(opt => opt.ChannelCapacity)
+            RuleFor(opt => opt.ChannelCapacity).Cascade(CascadeMode.Stop)
                 .NotNull()
                 .NotEmpty()
                 .InclusiveBetween(64, 254);
