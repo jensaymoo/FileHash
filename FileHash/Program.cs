@@ -38,15 +38,11 @@ namespace FileHash
                     
                     Console.WriteLine(ex.Message);
                     await abortTokenSource.CancelAsync();
-
-                    return;
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                     await abortTokenSource.CancelAsync();
-
-                    return;
                 }
             });
             
@@ -129,7 +125,7 @@ namespace FileHash
                             {
                                 using (SHA256 sha256 = SHA256.Create())
                                 {
-                                    await outputProvider.PublishHash(sha256.ComputeHash(bytes));
+                                    await outputProvider.PublishHash(ct, sha256.ComputeHash(bytes));
                                 }
                             }
                         }
