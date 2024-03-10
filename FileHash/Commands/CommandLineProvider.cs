@@ -30,17 +30,10 @@ namespace FileHash.Commands
             mapper = new MapperConfiguration(cfg =>
             {
                 cfg.CreateMap<IConfigurationRoot, ConfigurationFileStream>()
-                    .MapIf(x => x.FileName, y => y["input"] is not null, v => v["input"]!)
-
-                    .MapIf(x => x.BatchSize, y => y["batch"] is not null, v => v["batch"]!)
-                    .MapIf(x => x.BatchSize, y => y["batch"] is null, v => 4096)
-
-                    .MapIf(x => x.TaskLimit, y => y["task_limit"] is not null, v => v["task_limit"]!)
-                    .MapIf(x => x.TaskLimit, y => y["task_limit"] is null, v => 16)
-
-                    .MapIf(x => x.ChannelCapacity, y => y["channel_capacity"] is not null, v => v["channel_capacity"]!)
-                    .MapIf(x => x.ChannelCapacity, y => y["channel_capacity"] is null, v => 64);
-
+                    .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src["input"] ?? string.Empty))
+                    .ForMember(dest => dest.BatchSize, opt => opt.MapFrom(src => src["batch"] ?? "4096"))
+                    .ForMember(dest => dest.TaskLimit, opt => opt.MapFrom(src => src["task_limit"] ?? "16"))
+                    .ForMember(dest => dest.ChannelCapacity, opt => opt.MapFrom(src => src["channel_capacity"] ?? "64"));
 
             }).CreateMapper();
         }
