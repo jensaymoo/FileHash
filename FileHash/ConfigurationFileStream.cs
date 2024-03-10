@@ -5,9 +5,9 @@ namespace FileHash
     internal class ConfigurationFileStream
     {
         public string FileName { get; set; }
-        public int BatchSize { get; set; } = 4096;
-        public int TaskLimit { get; set; } = 16;
-        public int ChannelCapacity { get; set; } = 150;
+        public int BatchSize { get; set; }
+        public int TaskLimit { get; set; }
+        public int ChannelCapacity { get; set; }
     }
 
     internal class ConfigurationFileStreamValidator : AbstractValidator<ConfigurationFileStream>
