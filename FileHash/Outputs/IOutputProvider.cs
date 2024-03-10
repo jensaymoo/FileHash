@@ -2,7 +2,7 @@
 {
     internal interface IOutputProvider
     {
-        Task PublishHash(byte[] hash);
-        Task DisplayHashes(int maxCount);
+        Task PublishHash(CancellationToken ct, byte[] hash);
+        Task DisplayHashes(CancellationToken cts, int maxCount);
     }
 }

@@ -6,31 +6,42 @@ namespace FileHash.Outputs
     internal class ConsoleOutput : IOutputProvider
     {
         ConcurrentQueue<string> outputQueue = new ConcurrentQueue<string>();
-
-        public async Task PublishHash(byte[] hash)
+        public async Task PublishHash(CancellationToken ct, byte[] hash)
         {
             outputQueue.Enqueue(Convert.ToHexString(hash));
         }
 
-        public async Task DisplayHashes(int maxCount)
+        public async Task DisplayHashes(CancellationToken ct, int maxCount)
         {
             await AnsiConsole.Progress()
                 .StartAsync(async ctx =>
                 {
-                    var progressTask = ctx.AddTask("Reciving hashes", maxValue: maxCount);
-
-                    while (!ctx.IsFinished)
+                    await Task.Run(() =>
                     {
-                        while (outputQueue.Count > 0)
+                        var progressTask = ctx.AddTask("Published hashes", maxValue: maxCount);
+                        try
                         {
-                            while (outputQueue.TryDequeue(out var result))
+                            while (!ctx.IsFinished)
                             {
-                                progressTask.Increment(1);
-                                AnsiConsole.WriteLine(result);
+                                while (outputQueue.Count > 0)
+                                {
+                                    while (outputQueue.TryDequeue(out var result))
+                                    {
+                                        ct.ThrowIfCancellationRequested();
+
+                                        progressTask.Increment(1);
+                                        AnsiConsole.WriteLine(result);
+                                    }
+                                }
                             }
+                            progressTask.Value = progressTask.MaxValue;
                         }
-                    }
-                    progressTask.Value = progressTask.MaxValue;
+                        catch (OperationCanceledException) { }
+                        finally
+                        {
+                            AnsiConsole.Reset();
+                        }
+                    });
                 });
         }
     }

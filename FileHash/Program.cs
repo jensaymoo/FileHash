@@ -26,7 +26,7 @@ namespace FileHash
                         _ = PublishHash(channel, abortTokenSource, configuration.TaskLimit);
 
                         var maxBatches = (int)Math.Ceiling((double)stream.Length / configuration.BatchSize);
-                        await outputProvider.DisplayHashes(maxBatches);
+                        await outputProvider.DisplayHashes(abortTokenSource.Token, maxBatches);
 
                         await abortTokenSource.CancelAsync();
                     }
