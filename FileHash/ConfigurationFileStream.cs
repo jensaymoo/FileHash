@@ -16,7 +16,7 @@ namespace FileHash
         {
             RuleFor(opt => opt.FileName).Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .Must(x => File.Exists(x)).WithMessage("Заданный файл не найден.");
+                .Must(x => File.Exists(x)).WithMessage("File not exist.");
 
             When(x => File.Exists(x.FileName), () =>
             {
@@ -28,12 +28,12 @@ namespace FileHash
                             using (var file = File.OpenRead(val))
                             {
                                 if (!file.CanRead)
-                                    context.AddFailure("Заданный файл не удается прочитать по неизвестной причине.");
+                                    context.AddFailure("The specified file cannot be read for an unknown reason.");
                             }
                         }
                         catch (Exception ex)
                         {
-                            context.AddFailure($"Заданный файл не удается прочитать: {ex.Message}");
+                            context.AddFailure($"The specified file cannot be read: {ex.Message}");
                         }
                     });
             });
