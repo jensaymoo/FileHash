@@ -33,7 +33,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: ${{ github.event.repository.updated_at}}
+        name: ${{ github.event.repository.pushed_at }}
         tag_name: linux-x64
         make_latest: true
         files: /usr/share/filehash
