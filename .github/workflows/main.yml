@@ -30,8 +30,11 @@ jobs:
     
     - id: lastcommit
       uses: nmbgeek/github-action-get-latest-commit@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         branch: master
+        repository: ${{ github.repository }}
         
     - name: Upload Release Asset
       uses: softprops/action-gh-release@v2
