@@ -117,7 +117,7 @@ namespace FileHash
             {
                 tasks.Add(Task.Run(async () =>
                 {
-                    using (vsr sha256 = SHA256.Create())
+                    using (var sha256 = SHA256.Create())
                     {
                         try
                         {
