@@ -1,4 +1,4 @@
-﻿using FileHash.Inputs;
+using FileHash.Inputs;
 using FileHash.Outputs;
 using FluentValidation;
 using System.Reflection;
@@ -117,24 +117,24 @@ namespace FileHash
             {
                 tasks.Add(Task.Run(async () =>
                 {
-                    try
+                    using (vsr sha256 = SHA256.Create())
                     {
-                        while (await channel.Reader.WaitToReadAsync(ct))
+                        try
                         {
-                            while (channel.Reader.TryRead(out var bytes))
+                            while (await channel.Reader.WaitToReadAsync(ct))
                             {
-                                using (SHA256 sha256 = SHA256.Create())
+                                while (channel.Reader.TryRead(out var bytes))
                                 {
                                     await outputProvider.PublishHash(ct, sha256.ComputeHash(bytes));
                                 }
                             }
                         }
-                    }
-                    catch (OperationCanceledException) { }
-                    catch (Exception ex)
-                    {
-                        await cts.CancelAsync();
-                        throw;
+                        catch (OperationCanceledException) { }
+                        catch (Exception ex)
+                        {
+                            await cts.CancelAsync();
+                            throw;
+                        }
                     }
                 }));
             }
