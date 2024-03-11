@@ -1,25 +1,39 @@
-name: ProjectBuild
+name: Build
 
 on:
   push:
-    branches: [ trunk ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ trunk ]
+    branches: [ "master" ]
+
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-    - name: 🥅 Setup .NET Core
-      uses: actions/setup-dotnet@v1
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 8.0
-    - name: 🥅 Install dependencies
+        dotnet-version: 8.x
+    - name: Restore dependencies
       run: dotnet restore
-    - name: 🥅 Build
-      run: dotnet build --configuration Release --no-restore
-    - name: 🥅 Test
-      run: dotnet test --no-restore --verbosity normal
+      
+    - name: Build
+      run: dotnet build --no-restore
+      
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+      
+    - name: Publish
+      run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:PublishTrimmed=true -p:TrimMode=partial -o /usr/share/
+        
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        name: ${{ github.event.repository.updated_at}}
+        tag_name: linux-x64
+        make_latest: true
+        files: /usr/share/filehash
