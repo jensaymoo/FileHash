@@ -41,7 +41,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: build-${{ steps.lastcommit.outputs.shorthash }}
+        name: filehash-${{ steps.lastcommit.outputs.shorthash }}
         tag_name: linux-x64
         make_latest: true
         files: /usr/share/filehash
