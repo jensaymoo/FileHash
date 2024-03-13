@@ -7,7 +7,7 @@ using System.Threading.Channels;
 
 namespace FileHash
 {
-    internal class Program(IConfigProvider configProvider, IInputProvider inputProvider, IOutputProvider outputProvider) : IProgram
+    internal class Program(IConfigurationProvider configProvider, IInputProvider inputProvider, IOutputProvider outputProvider) : IProgram
     {
         ConfigurationFileStream? configuration;
 

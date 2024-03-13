@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace FileHash.Commands
 {
-    internal class CommandLineProvider : IConfigProvider
+    internal class CommandLineProvider : IConfigurationProvider
     {
         private string[] arguments;
 
@@ -46,7 +46,7 @@ namespace FileHash.Commands
                    "-c - размер буфера в сегментах, по умочанию 64.";
         }
 
-        public T GetConfiguration<T>(AbstractValidator<T>? validator = null) where T : new()
+        public T GetConfiguration<T>(IValidator<T>? validator = null) where T : class, new()
         {
             var value = mapper.Map<T>(configuration);
 

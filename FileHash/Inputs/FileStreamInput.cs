@@ -1,6 +1,8 @@
-﻿namespace FileHash.Inputs
+﻿using FluentValidation;
+
+namespace FileHash.Inputs
 {
-    internal class FileStreamInput(IConfigProvider provider) : IInputProvider
+    internal class FileStreamInput(IConfigurationProvider provider, IValidator<ConfigurationFileStream> validator) : IInputProvider
     {
         ConfigurationFileStream? configuration;
 
@@ -8,7 +10,7 @@
         {
             return await Task.Run(() =>
             {
-                configuration = provider.GetConfiguration(new ConfigurationFileStreamValidator());
+                configuration = provider.GetConfiguration(validator);
                 return new FileStream(configuration.FileName, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 16384, useAsync: true);
             });
         }
