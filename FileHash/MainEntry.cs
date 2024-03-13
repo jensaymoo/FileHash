@@ -2,6 +2,7 @@
 using FileHash.Commands;
 using FileHash.Inputs;
 using FileHash.Outputs;
+using FluentValidation;
 
 namespace FileHash
 {
@@ -17,7 +18,11 @@ namespace FileHash
             try
             {
                 builder.Register( c => new CommandLineProvider(args))
-                    .As<IConfigProvider>()
+                    .As<IConfigurationProvider>()
+                    .InstancePerLifetimeScope();
+
+                builder.RegisterType<ConfigurationFileStreamValidator>()
+                    .As<IValidator<ConfigurationFileStream>>()
                     .InstancePerLifetimeScope();
 
                 builder.RegisterType<FileStreamInput>()
