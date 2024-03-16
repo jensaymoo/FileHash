@@ -1,8 +1,7 @@
-﻿namespace FileHash.Outputs
+﻿namespace FileHash.Outputs;
+
+internal interface IOutputProvider
 {
-    internal interface IOutputProvider
-    {
-        Task PublishHash(CancellationToken ct, byte[] hash);
-        Task DisplayHashes(CancellationToken cts, int maxCount);
-    }
+    Task PublishHash(CancellationToken ct, byte[] hash);
+    Task DisplayHashes(CancellationToken cts, int maxCount);
 }

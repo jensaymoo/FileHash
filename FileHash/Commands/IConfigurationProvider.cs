@@ -1,10 +1,9 @@
 ﻿using FluentValidation;
 
-namespace FileHash
+namespace FileHash;
+
+internal interface IConfigurationProvider
 {
-    internal interface IConfigurationProvider
-    {
-        public string GetConfigurationDescription();
-        public T GetConfiguration<T>(IValidator<T>? validator = null) where T : class, new();
-    }
+    public string GetConfigurationDescription();
+    public T GetConfiguration<T>(IValidator<T>? validator = null) where T : class, new();
 }
