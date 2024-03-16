@@ -1,7 +1,6 @@
-﻿namespace FileHash.Inputs
+﻿namespace FileHash.Inputs;
+
+internal interface IInputProvider
 {
-    internal interface IInputProvider
-    {
-        Task<Stream> GetStream();
-    }
+    Task<Stream> GetStream();
 }

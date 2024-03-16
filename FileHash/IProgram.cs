@@ -1,7 +1,6 @@
-﻿namespace FileHash
+﻿namespace FileHash;
+
+public interface IProgram
 {
-    public interface IProgram
-    {
-        public Task Run();
-    }
+    public Task Run();
 }
