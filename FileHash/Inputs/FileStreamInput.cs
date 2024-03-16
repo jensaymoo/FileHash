@@ -2,7 +2,7 @@
 
 namespace FileHash.Inputs;
 
-internal class FileStreamInput(IConfigurationProvider provider, IValidator<ConfigurationFileStream> validator) : IInputProvider
+internal class FileStreamInput(IConfigurationProvider configProvider, IValidator<ConfigurationFileStream> configValidator) : IInputProvider
 {
     ConfigurationFileStream? configuration;
 
@@ -10,7 +10,7 @@ internal class FileStreamInput(IConfigurationProvider provider, IValidator<Confi
     {
         return await Task.Run(() =>
         {
-            configuration = provider.GetConfiguration(validator);
+            configuration = configProvider.GetConfiguration(configValidator);
             return new FileStream(configuration.FileName, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 16384, useAsync: true);
         });
     }
