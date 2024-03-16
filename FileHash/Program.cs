@@ -7,7 +7,7 @@ using System.Threading.Channels;
 
 namespace FileHash;
 
-internal class Program(IConfigurationProvider configProvider, IInputProvider inputProvider, IOutputProvider outputProvider) : IProgram
+internal class Program(IConfigurationProvider configProvider, IValidator<ConfigurationFileStream> configValidator, IInputProvider inputProvider, IOutputProvider outputProvider) : IProgram
 {
     ConfigurationFileStream? configuration;
 
@@ -20,7 +20,7 @@ internal class Program(IConfigurationProvider configProvider, IInputProvider inp
             {
                 using (var stream = await inputProvider.GetStream())
                 {
-                    configuration = configProvider.GetConfiguration(new ConfigurationFileStreamValidator());
+                    configuration = configProvider.GetConfiguration(configValidator);
 
                     var channel = ReadInput(stream, abortTokenSource, configuration.BatchSize, configuration.ChannelCapacity);
                     _ = PublishHash(channel, abortTokenSource, configuration.TaskLimit);
