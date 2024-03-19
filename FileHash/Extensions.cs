@@ -2,16 +2,12 @@
 
 internal static class Extensions
 {
-    public static async Task<byte[]> ReadBatchAsync(this Stream stream, int batchSize)
+    public static int ReadBatch(this Stream stream, ref byte[] output)
     {
-        byte[] buffer = new byte[batchSize];
-        int numRead;
+        int numRead = stream.Read(output, 0, output.Length);
+        if (numRead < output.Length)
+            Array.Resize(ref output, numRead);
 
-        numRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-
-        var zippedBuffer = new byte[numRead];
-        Array.Copy(buffer, zippedBuffer, numRead);
-
-        return await Task.FromResult(zippedBuffer);
+        return numRead;
     }
 }

@@ -83,10 +83,11 @@ internal class Program(IConfigurationProvider configProvider, IValidator<Configu
 
         var readTask = Task.Run(async () =>
         {
+
             try
             {
                 byte[] buffer = new byte[batchSize];
-                while ((buffer = await stream.ReadBatchAsync(batchSize)).Length != 0)
+                while (stream.ReadBatch(ref buffer) != 0)
                 {
                     await channel.Writer.WriteAsync(buffer, ct);
                 }
